@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="DesmosBeta2d.js" defer></script>
+    <title>Практика, день 2</title>
+</head>
+<body>
+<div align="center"><canvas id="C1" width="512" height="512"></canvas></div>
+<p>Введите функцию: </p>
+<input type="text" size="40" id="func" value="x*x">
+<p>Границы по Х:  xmax: <input type="text" size="5" id="xmax" value="10"> , xmin: <input type="text" size="5" id="xmin" value="-10"> </p>
+<p>Границы по Y:  ymax: <input type="text" size="5" id="ymax" value="10"> , ymin: <input type="text" size="5" id="ymin" value="-10"> </p>
+<p>Кол-во пикселей по оси X: <input type="text" size="5" id="H" value="512"></p>
+<p>Кол-во пикселей по оси Y: <input type="text" size="5" id="W" value="512"></p>
+<p>Менее плотная сетка: <input type="checkbox" id="gridlow" onchange="grid()"> <input type="text" size="8" id="gridamp" value="10" style="display: none" ></p>
+<p>Спектр (BETA): <input type="checkbox" id="spectrumON" onchange="SpectrumChange()"></p>
+<input type="button" value="CALCULATE!!!!" onclick="CALCULATE()">
+
+</body>
+</html>
