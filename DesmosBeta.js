@@ -16,7 +16,7 @@ class Graphics1D
             this.buf[x] = this.f(x);
         }
     }
-    draw(dots = "red", axis = "green", zeros = "indigo", gaps = "magenta", bg = "gray")
+    draw(dots = "red", axis = "lime", zeros = "indigo", gaps = "magenta", bg = "gray")
     {
         var graph = document.getElementById("C1");
         var ctx = graph.getContext("2d");
@@ -58,24 +58,11 @@ class Graphics1D
         ctx.moveTo(zerox + this.xmin * stepx, zeroy - this.f(this.xmin) * stepy);
         for (let i = this.xmin; i <= this.xmax; i += (-this.xmin + this.xmax) / this.W)
         {
-            if (this.buf[i])
-            {
-                ctx.stroke();
-                ctx.closePath();
-                ctx.beginPath();
-                ctx.fillStyle = zeros;
-                ctx.arc(zerox + i * stepx, zeroy - stepy * this.buf[i - 0.1], 3, 0, 180);
-                ctx.fill();
-                ctx.closePath();
-                ctx.beginPath();
-            }
-            else ctx.lineTo(zerox + i * stepx, zeroy - this.buf[i] * stepy);
+            ctx.lineTo(zerox + i * stepx, zeroy - this.buf[i] * stepy);
             console.log(zeroy - this.buf[i] * stepy);
         }
         ctx.stroke();
         ctx.closePath();
-
-
 
     }
 
