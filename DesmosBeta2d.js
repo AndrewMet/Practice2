@@ -21,7 +21,7 @@ class Graphics2D
             for (let j = 0; j <= this.H; j++)
             {
                 let stepx = this.W / (-this.xmin + this.xmax), stepy = this.H / (-this.ymin + this.ymax),
-                    zerox = Math.abs(this.xmin) * stepx, zeroy = Math.abs(this.ymin) * stepy;
+                    zerox = -this.xmin * stepx, zeroy = this.ymax * stepy;
                 let truex = (i-zerox)/stepx;
                 let truey = (zeroy-j)/stepy;
                 let res = this.f(truex, truey);
@@ -59,8 +59,8 @@ class Graphics2D
         this.evaluate();
         if(this.spectrumON == 1) this.spectrum();
         let stepx = this.W / (-this.xmin + this.xmax), stepy = this.H / (-this.ymin + this.ymax),
-            zerox = Math.abs(this.xmin) * stepx, zeroy = Math.abs(this.ymin) * stepy;
-        ctx.fillStyle = bg;
+            zerox = -this.xmin * stepx, zeroy = this.ymax * stepy;
+        ctx.fillStyle = "black";
         ctx.fillRect(0, 0, this.W, this.H);
         ctx.beginPath();
         ctx.lineWidth = 2;
@@ -89,32 +89,43 @@ class Graphics2D
             ctx.closePath();
             ctx.stroke();
         }
-
+        var imgData = ctx.getImageData(0,0,this.W,this.H);
+        var RGBA = imgData.data;
         ctx.moveTo(0,0);
         for(let i=0; i<=this.W; i++)
         {
             for(let j=0; j<=this.H; j++)
             {
-                ctx.beginPath();
+                //ctx.beginPath();
                 let p = this.buf[[i,j]];
                 if(this.spectrumON)
                 {
-                    if(p < 0) ctx.fillStyle="rgba(0, 0, "+this.spec[[i,j]]+", 0.2)";
+                    /*if(p < 0) ctx.fillStyle="rgba(0, 0, "+this.spec[[i,j]]+", 0.2)";
                     if(p > 0) ctx.fillStyle="rgba("+this.spec[[i,j]]+", 0, 0, 0.2)";
-                    if(p == 0) ctx.fillStyle="rgba(0, 0, 0, 0.2)";
+                    if(p == 0) ctx.fillStyle="rgba(0, 0, 0, 0.2)";*/
+                    var pxid = 4*((j-1)*this.W+i+1);
+                    if (p > 0) RGBA[pxid] = this.spec[[i,j]];
+                    if (p < 0) RGBA[pxid+2] = this.spec[[i,j]];
+                    RGBA[pxid+3] = 255;
                 }
                 else
                 {
-                    if(p < 0) ctx.fillStyle="rgba(0, 0, 255, 0.2)";
+                    /*if(p < 0) ctx.fillStyle="rgba(0, 0, 255, 0.2)";
                     if(p > 0) ctx.fillStyle="rgba(255, 0, 0, 0.2)";
-                    if(p == 0) ctx.fillStyle="rgba(255, 255, 255, 1)";
+                    if(p == 0) ctx.fillStyle="rgba(255, 255, 255, 1)";*/
+                    var pxid = 4*((j-1)*this.W+i+1);
+                    if (p > 0) RGBA[pxid] = 255;
+                    if (p < 0) RGBA[pxid+2] = 255;
+                    RGBA[pxid+3] = 255;
                 }
+
                 //if(p<0) console.log(i+" "+j+" "+truex+" "+truey+" "+p);
-                ctx.arc(i, j, 1, 0, 360);
-                ctx.fill();
-                ctx.closePath()
+                //ctx.arc(i, j, 1, 0, 360);
+               // ctx.fill();
+                //ctx.closePath()
             }
         }
+        ctx.putImageData(imgData,0,0);
         console.log("spectrum maximums: "+this.spectrumMaxPos+" "+this.spectrumMinNeg);
         ctx.stroke();
         ctx.closePath();
@@ -122,17 +133,14 @@ class Graphics2D
 
         ctx.font = 25 +"px Consolas";
         ctx.textBaseline = 'ideographic';
-        ctx.fillStyle = "black";
+        if(!this.spectrumON) ctx.fillStyle = "black"; else ctx.fillStyle="white";
         let mx = "(" + this.xmax + ", " + this.ymax + ")", mn = "(" + this.xmin + ", " + this.ymin + ")";
         ctx.fillText(
             mx,
             zerox + this.xmax * stepx - (25 * mx.length) / 1.8,
-            zeroy + this.ymin * stepy + 25
+            zeroy - this.ymax * stepy + 25
         );
-        ctx.fillText(
-            mn, zerox + this.xmin * stepx,
-            zeroy + this.ymax * stepy
-        );
+        ctx.fillText(mn, zerox + this.xmin * stepx, zeroy - this.ymin * stepy);
 
 
     }

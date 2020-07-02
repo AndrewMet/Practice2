@@ -8,13 +8,18 @@ class Graphics1D
     W = 512;
     H = 512;
     gridAmplifier = 1;
+    Fmax = this.ymin; Fmin = this.ymax;
     f = function (x) {return x*x-9;};
     evaluate()
     {
         this.buf = new Map();
+        this.Fmax = 0; this.Fmin=0;
         for(let x=this.xmin; x<this.xmax; x += (-this.xmin + this.xmax) / this.W)
         {
-            this.buf[x] = this.f(x);
+            var res  = this.f(x);
+            this.buf[x] = res;
+            this.Fmax = Math.max(this.Fmax,res);
+            this.Fmin = Math.min(this.Fmin,res);
         }
     }
     draw(dots = "red", axis = "lime", zeros = "indigo", gaps = "magenta", bg = "gray")
@@ -23,9 +28,15 @@ class Graphics1D
         var ctx = graph.getContext("2d");
         this.evaluate();
         let stepx = this.W / (-this.xmin + this.xmax), stepy = this.H / (-this.ymin + this.ymax),
-            zerox = Math.abs(this.xmin) * stepx, zeroy = Math.abs(this.ymin) * stepy;
+            zerox = -this.xmin * stepx, zeroy = this.ymax * stepy;
+        console.log("In draw: ");
+        console.log("xmin: "+this.xmin+" xmax "+this.xmax+" ymin "+this.ymin+" ymax "+this.ymax+" Fmin,Fmax "+this.Fmin+" "+this.Fmax);
+        console.log("stepx: "+stepx+" stepy "+stepy);
+        console.log("zerox:"+zerox+" zeroy "+zeroy);
+
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, this.W, this.H);
+
         ctx.beginPath();
         ctx.lineWidth = 2;
         ctx.strokeStyle = axis;
@@ -35,6 +46,7 @@ class Graphics1D
         ctx.lineTo(zerox, this.H);
         ctx.closePath();
         ctx.stroke();
+
         ctx.lineWidth = 0.3;
         ctx.strokeStyle = axis;
         for(let i=0;i<=this.W;i+=stepx*this.gridAmplifier)
@@ -57,22 +69,40 @@ class Graphics1D
         ctx.lineWidth = 1;
         ctx.strokeStyle = dots;
         ctx.moveTo(zerox + this.xmin * stepx, zeroy - this.f(this.xmin) * stepy);
+        console.log("drawing: "+this.ymin+" "+this.ymax);
         for (let i = this.xmin; i <= this.xmax; i += (-this.xmin + this.xmax) / this.W)
         {
             if (i!=this.xmin)
             {
                 let cur = this.buf[i];
                 let prev = this.buf[i - (-this.xmin + this.xmax) / this.W] ;
-                if(cur*prev < 0 && (Math.abs(cur - prev) > this.ymax - this.ymin)) {
-                    console.log(cur+" "+prev);
-                    ctx.stroke();
-                    ctx.closePath();
-                    ctx.beginPath();
-                    ctx.fillStyle = gaps;
-                    ctx.arc(zerox + i * stepx, zeroy, stepx / 10, 0, 180);
-                    ctx.fill();
-                    ctx.closePath();
-                    ctx.beginPath();
+                if(cur*prev <= 0){
+                    if((Math.abs(cur - prev) > this.ymax - this.ymin)) //разрыв
+                    {
+                        console.log(cur+" "+prev);
+                        ctx.stroke();
+                        ctx.closePath();
+                        ctx.beginPath();
+                        ctx.fillStyle = gaps;
+                        ctx.arc(zerox + i * stepx, zeroy, stepx / 10, 0, 180);
+                        ctx.fill();
+                        ctx.closePath();
+                        ctx.beginPath();
+                    }
+                    else
+                    {
+                        ctx.stroke();
+                        ctx.closePath();
+                        ctx.beginPath();
+                        ctx.fillStyle = zeros;
+                        ctx.arc(zerox + i * stepx, zeroy, stepx / 10, 0, 180);
+                        ctx.fill();
+                        ctx.closePath();
+                        ctx.beginPath();
+                        let backwards = i - (-this.xmin + this.xmax) / this.W;
+                        ctx.moveTo(zerox + backwards*stepx,zeroy - this.buf[backwards]*stepy);
+                        ctx.lineTo(zerox + i * stepx, zeroy - this.buf[i] * stepy);
+                    }
                 }
                 else ctx.lineTo(zerox + i * stepx, zeroy - this.buf[i] * stepy);
             }
@@ -89,20 +119,17 @@ class Graphics1D
         ctx.fillText(
             mx,
             zerox + this.xmax * stepx - (25 * mx.length) / 1.8,
-            zeroy + this.ymin * stepy + 25
+            zeroy - this.ymax * stepy + 25
         );
-        ctx.fillText(
-            mn, zerox + this.xmin * stepx,
-            zeroy + this.ymax * stepy
-        );
-
-
+        ctx.fillText(mn, zerox + this.xmin * stepx, zeroy - this.ymin * stepy);
     }
 
-    autodraw(dots = "red", axis = "green", zeros = "indigo", gaps = "magenta", bg = "gray")
+    autodraw(dots = "red", axis = "lime", zeros = "indigo", gaps = "magenta", bg = "gray")
     {
-        this.ymin = this.f(this.xmin);
-        this.ymax = this.f(this.xmax);
+        this.evaluate();
+        this.ymin = this.Fmin;
+        this.ymax = this.Fmax;
+        console.log("autodraw "+this.Fmin+" "+this.Fmax);
         this.draw(dots, axis, zeros, gaps, bg);
     }
 
@@ -110,7 +137,15 @@ class Graphics1D
 }
 
 function grid() {
-    document.getElementById("gridamp").style.display = "block";
+    if(document.getElementById("gridlow").checked)
+    {
+        document.getElementById("gridamp").style.display = "block";
+    }
+    else
+    {
+        document.getElementById("gridamp").style.display = "none";
+        x.gridAmplifier = 1;
+    }
 }
 
 function replaceSpecialSequence(str) {
@@ -170,4 +205,23 @@ function CALCULATE()
 
 
 
+}
+function autoDraw() {
+    var If = document.getElementById("func").value,
+        Ixmin = parseFloat(document.getElementById("xmin").value),
+        Ixmax = parseFloat(document.getElementById("xmax").value),
+        Iymin = parseFloat(document.getElementById("ymin").value),
+        Iymax = parseFloat(document.getElementById("ymax").value),
+        IW = parseFloat(document.getElementById("W").value),
+        IH = parseFloat(document.getElementById("H").value);
+    console.log(Ixmin, Ixmax, Iymin, typeof (Iymax), IW, IH, If);
+    x.H = IH;
+    x.W = IW;
+    document.getElementById("C1").width = IW;
+    document.getElementById("C1").height = IH;
+    x.xmax = Ixmax;
+    x.xmin = Ixmin;
+    x.f = function(x) {return eval(replaceSpecialSequence(If));}
+    if(document.getElementById("gridlow").checked) x.gridAmplifier=parseFloat(document.getElementById("gridamp").value);
+    x.autodraw();
 }
